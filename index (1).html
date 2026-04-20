@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>振り返りシート</title>
+
+<!-- ============ PWA 関連タグ ============ -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1a5fa8">
+<meta name="description" content="救急外来の勤務後の振り返り記録アプリ">
+
+<!-- iOS (Safari) 用：ホーム追加時のアイコン／全画面化 -->
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="振り返り">
+
+<!-- 通常のファビコン -->
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<!-- ====================================== -->
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#f2f4f7;color:#1a1a1a;min-height:100vh;padding-bottom:48px;}
+header{background:#1a5fa8;color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;}
+header h1{font-size:16px;font-weight:600;}
+header p{font-size:12px;opacity:.8;margin-top:2px;}
+.edit-banner{background:#fff8e1;color:#856404;padding:10px 16px;font-size:13px;font-weight:500;border-bottom:1px solid #f5a623;display:none;position:sticky;top:52px;z-index:9;align-items:center;justify-content:space-between;}
+.edit-banner.show{display:flex;}
+.edit-banner button{background:none;border:1px solid #856404;color:#856404;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;}
+.section{background:#fff;margin:12px;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.sec-head{background:#f7f9fc;padding:10px 14px;border-bottom:1px solid #e8edf2;}
+.sec-head h2{font-size:13px;font-weight:600;color:#1a5fa8;}
+.field{padding:12px 14px;border-bottom:1px solid #f0f0f0;}
+.field:last-child{border-bottom:none;}
+.lbl{font-size:12px;color:#666;margin-bottom:6px;font-weight:500;}
+.req{color:#e53e3e;margin-left:2px;}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+input[type=number]{width:68px;padding:8px 6px;border:1px solid #d0d7e0;border-radius:8px;font-size:15px;text-align:center;-webkit-appearance:none;appearance:none;}
+input[type=text],input[type=password]{width:100%;padding:9px 10px;border:1px solid #d0d7e0;border-radius:8px;font-size:14px;font-family:inherit;}
+textarea{width:100%;padding:9px 10px;border:1px solid #d0d7e0;border-radius:8px;font-size:14px;resize:vertical;min-height:72px;font-family:inherit;line-height:1.5;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip,.mchip,.sch,.sbtn{cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation;}
+.chip{padding:0 16px;border-radius:99px;border:1px solid #d0d7e0;font-size:13px;color:#555;background:#fff;height:44px;display:inline-flex;align-items:center;justify-content:center;}
+.chip.sel{background:#1a5fa8;color:#fff;border-color:#1a5fa8;}
+.mchip{padding:0 14px;border-radius:99px;border:1px solid #d0d7e0;font-size:13px;color:#555;background:#fff;height:44px;display:inline-flex;align-items:center;justify-content:center;}
+.mchip.sel{background:#e8f0fb;color:#1a5fa8;border-color:#1a5fa8;}
+.shift-wrap{display:flex;gap:8px;}
+.sch{flex:1;border-radius:10px;border:1px solid #d0d7e0;font-size:14px;font-weight:500;background:#fff;color:#555;height:48px;display:flex;align-items:center;justify-content:center;}
+.sch.day.sel{background:#fff8e1;color:#856404;border-color:#f5a623;}
+.sch.night.sel{background:#e8f0fb;color:#1a5fa8;border-color:#1a5fa8;}
+.sbtn{flex:1;border-radius:8px;border:1px solid #d0d7e0;font-size:13px;font-weight:500;background:#fff;color:#555;height:44px;display:flex;align-items:center;justify-content:center;}
+.sbtn.good.sel{background:#e6f4ea;color:#1e7e34;border-color:#1e7e34;}
+.sbtn.normal.sel{background:#fff8e1;color:#856404;border-color:#f5a623;}
+.sbtn.bad.sel{background:#fde8e8;color:#b91c1c;border-color:#e53e3e;}
+.sub{background:#f7f9fc;border-radius:8px;padding:10px 12px;margin-top:8px;}
+.card{background:#f7f9fc;border:1px solid #e0e7ef;border-radius:10px;padding:12px;margin-bottom:10px;position:relative;}
+.card-wh{background:#fff;}
+.clbl{font-size:11px;font-weight:600;color:#1a5fa8;margin-bottom:8px;}
+.rm{position:absolute;top:8px;right:8px;background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+.add-btn{width:100%;border:1.5px dashed #a0b4cc;border-radius:10px;background:#f0f5fb;color:#1a5fa8;font-size:13px;font-weight:500;cursor:pointer;height:48px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.save-btn{display:flex;align-items:center;justify-content:center;width:calc(100% - 24px);margin:16px 12px 8px;background:#1a5fa8;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;height:52px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.hist-btn,.exp-btn{display:flex;align-items:center;justify-content:center;width:calc(100% - 24px);margin:0 12px 8px;border-radius:12px;font-size:14px;cursor:pointer;height:48px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.hist-btn{background:#fff;color:#1a5fa8;border:1.5px solid #1a5fa8;font-weight:500;}
+.exp-btn{background:#fff;color:#555;border:1px solid #d0d7e0;}
+.err{font-size:11px;color:#e53e3e;margin-top:4px;display:none;}
+.err.show{display:block;}
+.storage-warn{margin:0 12px 8px;padding:10px 12px;background:#fde8e8;color:#b91c1c;border:1px solid #e53e3e;border-radius:8px;font-size:12px;display:none;}
+.storage-warn.show{display:block;}
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
+.mbg.open{display:flex;}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:480px;margin:auto;}
+.mhead{padding:14px 16px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0;z-index:1;gap:8px;}
+.mhead h3{font-size:15px;font-weight:600;flex:1;}
+.mcls{background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;flex-shrink:0;}
+.mbody{padding:12px 16px;}
+.hist-search{padding:8px 16px;border-bottom:1px solid #f0f0f0;}
+.hist-search input{width:100%;padding:8px 10px;border:1px solid #d0d7e0;border-radius:8px;font-size:13px;}
+.hi{padding:12px;border:1px solid #e8edf2;border-radius:10px;margin-bottom:8px;cursor:pointer;touch-action:manipulation;}
+.hi-date{font-size:13px;font-weight:600;color:#1a5fa8;}
+.hi-meta{font-size:12px;color:#888;margin-top:3px;}
+.dr{display:flex;gap:6px;margin-bottom:6px;font-size:13px;}
+.dl{color:#888;min-width:110px;flex-shrink:0;}
+.dv{color:#1a1a1a;flex:1;word-break:break-word;}
+.ds{margin-bottom:14px;}
+.dst{font-size:12px;font-weight:600;color:#1a5fa8;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #e8edf2;}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500;margin-right:4px;}
+.b-bl{background:#e8f0fb;color:#1a5fa8;}
+.b-am{background:#fff8e1;color:#856404;}
+.b-gn{background:#e6f4ea;color:#1e7e34;}
+.b-rd{background:#fde8e8;color:#b91c1c;}
+.b-gy{background:#f0f0f0;color:#555;}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.b-edit,.b-del{flex:1;height:44px;border-radius:10px;background:#fff;font-size:13px;font-weight:500;cursor:pointer;touch-action:manipulation;}
+.b-edit{border:1.5px solid #1a5fa8;color:#1a5fa8;}
+.b-del{border:1.5px solid #e53e3e;color:#e53e3e;}
+.cfmbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:16px;}
+.cfmbg.open{display:flex;}
+.cfm{background:#fff;border-radius:14px;padding:20px;width:100%;max-width:320px;text-align:center;}
+.cfm p{font-size:14px;margin-bottom:16px;color:#333;line-height:1.6;}
+.cfm-btns{display:flex;gap:8px;}
+.cfm-btns button{flex:1;height:44px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;touch-action:manipulation;}
+.b-cfm-c{border:1px solid #d0d7e0;background:#fff;color:#555;}
+.b-cfm-d{border:none;background:#e53e3e;color:#fff;}
+.b-cfm-bl{border:none;background:#1a5fa8;color:#fff;}
+.empty-hist{color:#888;font-size:13px;padding:20px 8px;text-align:center;}
+.stats{background:linear-gradient(135deg,#1a5fa8 0%,#2d7dd2 100%);color:#fff;border-radius:12px;padding:14px;margin-bottom:12px;}
+.stats-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.stats-title{font-size:13px;font-weight:600;opacity:.95;}
+.stats-period{font-size:11px;opacity:.8;}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.stat-card{background:rgba(255,255,255,.15);border-radius:8px;padding:8px 10px;}
+.stat-lbl{font-size:10px;opacity:.85;margin-bottom:2px;}
+.stat-val{font-size:18px;font-weight:700;line-height:1.2;}
+.stat-sub{font-size:10px;opacity:.8;margin-top:1px;}
+.stats-bar-wrap{margin-top:10px;}
+.stats-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;}
+.stats-bar-lbl{min-width:40px;opacity:.85;}
+.stats-bar{flex:1;height:6px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden;}
+.stats-bar-fill{height:100%;background:#fff;border-radius:3px;transition:width .4s;}
+.stats-bar-val{min-width:28px;text-align:right;font-weight:600;}
+.stats-empty{text-align:center;font-size:12px;opacity:.85;padding:10px 0;}
+.stats-tabs{display:flex;gap:4px;background:rgba(0,0,0,.15);border-radius:8px;padding:3px;margin-bottom:10px;}
+.stats-tab{flex:1;padding:6px 0;border-radius:6px;font-size:11px;font-weight:500;text-align:center;cursor:pointer;color:rgba(255,255,255,.75);touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;transition:background .15s,color .15s;}
+.stats-tab.sel{background:#fff;color:#1a5fa8;font-weight:600;}
+.stats-filter-note{font-size:10px;opacity:.85;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.2);display:flex;align-items:center;gap:4px;}
+.hist-filters{padding:8px 16px 10px;border-bottom:1px solid #f0f0f0;background:#fff;}
+.filter-label{font-size:11px;color:#666;font-weight:500;margin:6px 0 4px;}
+.filter-chips{display:flex;gap:5px;flex-wrap:wrap;}
+.fchip{padding:4px 10px;border-radius:99px;border:1px solid #d0d7e0;font-size:11px;color:#555;background:#fff;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+.fchip.sel{background:#1a5fa8;color:#fff;border-color:#1a5fa8;}
+.fchip.sel.f-good{background:#1e7e34;border-color:#1e7e34;}
+.fchip.sel.f-bad{background:#b91c1c;border-color:#b91c1c;}
+.fchip.sel.f-warn{background:#856404;border-color:#f5a623;}
+.filter-clear{font-size:11px;color:#1a5fa8;background:none;border:none;cursor:pointer;padding:4px 0;margin-left:auto;display:block;}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;white-space:nowrap;z-index:300;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis;}
+.toast-n{background:#1a1a1a;}
+.toast-e{background:#c0392b;}
+/* PWA: インストール後のステータスバー考慮（iOS safe-area） */
+@supports (padding: env(safe-area-inset-top)){
+  header{padding-top:calc(14px + env(safe-area-inset-top));}
+  .edit-banner{top:calc(52px + env(safe-area-inset-top));}
+  body{padding-bottom:calc(48px + env(safe-area-inset-bottom));}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>救急外来 振り返りシート</h1>
+  <p id="hdate"></p>
+</header>
+
+<div class="edit-banner" id="edit-banner">
+  <span>✏️ 編集モード：修正後に保存してください</span>
+  <button id="btn-cancel-edit">キャンセル</button>
+</div>
+
+<div class="storage-warn" id="storage-warn">
+  ⚠️ 保存容量が少なくなっています。古い記録のCSVエクスポート・削除をご検討ください。
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>基本情報</h2></div>
+  <div class="field">
+    <div class="lbl">勤務区分<span class="req">*</span></div>
+    <div class="shift-wrap">
+      <div class="sch day" data-shift="day">☀️ 日勤</div>
+      <div class="sch night" data-shift="night">🌙 夜勤</div>
+    </div>
+    <div class="err" id="e-shift">勤務区分を選択してください</div>
+  </div>
+  <div class="field">
+    <div class="lbl">看護師の人数<span class="req">*</span></div>
+    <div class="row">
+      <input type="number" id="nurse-n" min="1" max="99" placeholder="0" inputmode="numeric">
+      <span style="font-size:13px;color:#666;">名</span>
+      <div class="chips" style="margin-left:4px;">
+        <div class="chip" data-staff="enough">十分</div>
+        <div class="chip" data-staff="normal">普通</div>
+        <div class="chip" data-staff="short">不足</div>
+      </div>
+    </div>
+    <div class="err" id="e-nurse">人数と配置状況を入力してください</div>
+  </div>
+  <div class="field">
+    <div class="lbl">休憩時間の確保<span class="req">*</span></div>
+    <div class="chips">
+      <div class="chip" data-break="ok">確保できた</div>
+      <div class="chip" data-break="ng">できなかった</div>
+    </div>
+    <div class="err" id="e-break">休憩状況を選択してください</div>
+    <div class="sub" id="br-detail" style="display:none;">
+      <div class="lbl" style="margin-bottom:6px;">不足時間・応援要請</div>
+      <div class="row" style="margin-bottom:8px;">
+        <input type="number" id="br-min" min="10" max="120" step="10" placeholder="0" inputmode="numeric">
+        <span style="font-size:13px;color:#666;">分不足</span>
+        <input type="number" id="br-staff" min="1" max="99" placeholder="0" inputmode="numeric">
+        <span style="font-size:13px;color:#666;">名</span>
+      </div>
+      <div class="err" id="e-br-min">不足時間を入力してください</div>
+      <div class="lbl" style="margin-bottom:6px;">病棟や他部署からの応援</div>
+      <div class="chips">
+        <div class="chip" data-support="yes">あり</div>
+        <div class="chip" data-support="no">なし</div>
+      </div>
+      <div class="err" id="e-support">応援の有無を選択してください</div>
+      <div id="sup-reason-wrap" style="display:none;margin-top:8px;">
+        <div class="lbl" style="margin-bottom:4px;">応援なしの理由（任意）</div>
+        <input type="text" id="sup-reason" placeholder="例：病棟も人手不足のため" maxlength="100">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>コミュニケーション・患者対応</h2></div>
+  <div class="field">
+    <div class="lbl">評価<span class="req">*</span></div>
+    <div style="display:flex;gap:8px;">
+      <div class="sbtn good" data-comm="good">😊 良好</div>
+      <div class="sbtn normal" data-comm="normal">😐 普通</div>
+      <div class="sbtn bad" data-comm="bad">😔 課題あり</div>
+    </div>
+    <div class="err" id="e-comm">評価を選択してください</div>
+  </div>
+  <div class="field" id="comm-positive" style="display:none;">
+    <div class="lbl">よかったこと <span style="font-size:11px;color:#888;font-weight:400;">（任意）</span></div>
+    <div class="chips" id="pf-chips" style="margin-bottom:8px;">
+      <div class="mchip" data-pf="チームワーク">チームワーク</div>
+      <div class="mchip" data-pf="声かけ">声かけ</div>
+      <div class="mchip" data-pf="患者対応">患者対応</div>
+      <div class="mchip" data-pf="迅速な対応">迅速な対応</div>
+      <div class="mchip" data-pf="その他">その他</div>
+    </div>
+    <textarea id="pf-note" placeholder="具体的によかった場面やスタッフへのコメントなど" style="min-height:60px;" maxlength="500"></textarea>
+  </div>
+  <div class="field" id="comm-detail" style="display:none;">
+    <div class="lbl">対象とコメント<span class="req">*</span></div>
+    <div id="comm-con"></div>
+    <button class="add-btn" id="btn-add-comm">＋ 対象・コメントを追加</button>
+    <div class="err" id="e-comm-n">全ての対象にコメントを入力してください</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+    <h2 style="white-space:nowrap;">気になった症例</h2>
+    <span style="font-size:11px;color:#b45309;background:#fff8e1;border:1px solid #f5a623;border-radius:6px;padding:3px 8px;line-height:1.4;">⚠️ 氏名・生年月日など個人を特定できる情報は入力しないでください</span>
+  </div>
+  <div class="field">
+    <div class="lbl">症例の有無<span class="req">*</span></div>
+    <div class="chips">
+      <div class="chip" data-case="yes">あり</div>
+      <div class="chip" data-case="no">なし</div>
+    </div>
+    <div class="err" id="e-cp">症例の有無を選択してください</div>
+  </div>
+  <div id="cases-wrap" style="display:none;">
+    <div class="field" id="cases-con"></div>
+    <div class="field"><button class="add-btn" id="btn-add-case">＋ 症例を追加</button></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>共有したいこと</h2></div>
+  <div class="field">
+    <div class="lbl">フリーコメント（任意）</div>
+    <textarea id="free" placeholder="チームで共有したいこと" style="min-height:80px;" maxlength="1000"></textarea>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><h2>入力者</h2></div>
+  <div class="field">
+    <div class="lbl">名前<span class="req">*</span></div>
+    <input type="text" id="author" placeholder="例：山田 太郎" maxlength="30" list="author-list" autocomplete="off">
+    <datalist id="author-list"></datalist>
+    <div class="err" id="e-author">名前を入力してください</div>
+  </div>
+</div>
+
+<button class="save-btn" id="btn-save">振り返りを保存</button>
+<button class="hist-btn" id="btn-hist">📋 過去の記録を見る</button>
+<button class="exp-btn" id="btn-exp">📥 CSVエクスポート</button>
+
+<!-- 保存確認 -->
+<div class="cfmbg" id="m-save-confirm">
+  <div class="cfm">
+    <p id="save-confirm-msg">保存しますか？</p>
+    <div class="cfm-btns">
+      <button class="b-cfm-c" data-close="m-save-confirm">いいえ</button>
+      <button class="b-cfm-bl" id="btn-save-yes">はい</button>
+    </div>
+  </div>
+</div>
+
+<!-- 保存完了 -->
+<div class="cfmbg" id="m-done">
+  <div class="cfm">
+    <p>保存しました。<br>続けて別の記録を入力しますか？</p>
+    <div class="cfm-btns">
+      <button class="b-cfm-c" id="btn-stay">閉じる</button>
+      <button class="b-cfm-bl" id="btn-new">新規入力</button>
+    </div>
+  </div>
+</div>
+
+<!-- 暗証番号 -->
+<div class="cfmbg" id="m-pin">
+  <div class="cfm">
+    <p>暗証番号を入力してください</p>
+    <input type="password" id="pin-input" placeholder="" inputmode="numeric" maxlength="8" style="width:100%;padding:10px;border:1px solid #d0d7e0;border-radius:8px;font-size:18px;text-align:center;letter-spacing:8px;margin-bottom:8px;">
+    <div style="font-size:11px;color:#e53e3e;margin-bottom:12px;display:none;" id="pin-err">暗証番号が違います</div>
+    <div class="cfm-btns">
+      <button class="b-cfm-c" data-close="m-pin">キャンセル</button>
+      <button class="b-cfm-bl" id="btn-pin-ok">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- 履歴 -->
+<div class="mbg" id="m-hist">
+  <div class="modal">
+    <div class="mhead">
+      <h3>過去の記録 <span id="hist-count" style="font-size:12px;color:#888;font-weight:400;"></span></h3>
+      <button class="mcls" data-close="m-hist">×</button>
+    </div>
+    <div class="hist-search">
+      <input type="text" id="hist-search" placeholder="入力者・内容で検索" maxlength="50">
+    </div>
+    <div class="hist-filters">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="filter-label" style="margin-top:0;">絞り込み</div>
+        <button class="filter-clear" id="btn-filter-clear">クリア</button>
+      </div>
+      <div class="filter-label">勤務区分</div>
+      <div class="filter-chips">
+        <div class="fchip" data-filter="shift" data-val="日勤">☀️ 日勤</div>
+        <div class="fchip" data-filter="shift" data-val="夜勤">🌙 夜勤</div>
+      </div>
+      <div class="filter-label">配置状況</div>
+      <div class="filter-chips">
+        <div class="fchip" data-filter="staff" data-val="十分">十分</div>
+        <div class="fchip" data-filter="staff" data-val="普通">普通</div>
+        <div class="fchip" data-filter="staff" data-val="不足">不足</div>
+      </div>
+      <div class="filter-label">休憩</div>
+      <div class="filter-chips">
+        <div class="fchip" data-filter="break" data-val="確保できた">確保できた</div>
+        <div class="fchip" data-filter="break" data-val="できなかった">できなかった</div>
+      </div>
+      <div class="filter-label">コミュニケーション評価</div>
+      <div class="filter-chips">
+        <div class="fchip f-good" data-filter="comm" data-val="良好">😊 良好</div>
+        <div class="fchip f-warn" data-filter="comm" data-val="普通">😐 普通</div>
+        <div class="fchip f-bad" data-filter="comm" data-val="課題あり">😔 課題あり</div>
+      </div>
+      <div class="filter-label">症例</div>
+      <div class="filter-chips">
+        <div class="fchip" data-filter="case" data-val="yes">症例あり</div>
+        <div class="fchip" data-filter="case" data-val="no">症例なし</div>
+      </div>
+    </div>
+    <div class="mbody" id="m-hist-body"></div>
+  </div>
+</div>
+
+<!-- 詳細 -->
+<div class="mbg" id="m-detail">
+  <div class="modal">
+    <div class="mhead">
+      <h3 id="m-detail-title">記録の詳細</h3>
+      <button class="mcls" data-close="m-detail">×</button>
+    </div>
+    <div class="mbody" id="m-detail-body"></div>
+  </div>
+</div>
+
+<!-- 削除確認 -->
+<div class="cfmbg" id="m-cfm">
+  <div class="cfm">
+    <p>この記録を削除しますか？<br>この操作は取り消せません。</p>
+    <div class="cfm-btns">
+      <button class="b-cfm-c" data-close="m-cfm">キャンセル</button>
+      <button class="b-cfm-d" id="btn-cfm-del">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 編集破棄確認 -->
+<div class="cfmbg" id="m-discard">
+  <div class="cfm">
+    <p>編集内容を破棄しますか？<br>入力した内容は失われます。</p>
+    <div class="cfm-btns">
+      <button class="b-cfm-c" data-close="m-discard">続ける</button>
+      <button class="b-cfm-d" id="btn-discard-yes">破棄する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   定数・状態管理
+   ============================================================ */
+const STORAGE_KEY = 'nr';
+const PIN_CODE = '0000'; // 本番では変更してください
+const MAX_RECORDS = 500;
+
+const state = {
+  shift: '', staff: '', breakS: '', support: '',
+  comm: '', caseP: '',
+  editIdx: null, delIdx: null,
+  caseSeq: 0, commSeq: 0,
+  filters: { shift: [], staff: [], break: [], comm: [], case: [] },
+  statsPeriod: 30,
+  saving: false
+};
+
+const $ = (id) => document.getElementById(id);
+const $$ = (sel, root = document) => root.querySelectorAll(sel);
+
+const fmtD = (d) => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;
+const fmtT = (d) => `${('0'+d.getHours()).slice(-2)}:${('0'+d.getMinutes()).slice(-2)}`;
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function showErr(id, show = true) {
+  const el = $(id);
+  if (el) el.classList.toggle('show', show);
+}
+
+function showToast(msg, isErr = false) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (isErr ? 'toast-e' : 'toast-n');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function on(el, fn) {
+  if (!el) return;
+  el.addEventListener('click', fn);
+}
+
+function exclusiveSelect(container, selector, selected) {
+  $$(selector, container).forEach(el => el.classList.toggle('sel', el === selected));
+}
+
+function getRecs() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch (e) {
+    console.error('localStorage read failed', e);
+    return [];
+  }
+}
+
+function setRecs(recs) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(recs));
+    checkStorageUsage();
+    return true;
+  } catch (e) {
+    console.error('localStorage write failed', e);
+    showToast('保存に失敗しました。容量が不足している可能性があります', true);
+    return false;
+  }
+}
+
+function checkStorageUsage() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY) || '';
+    const warn = data.length > 2_000_000;
+    $('storage-warn').classList.toggle('show', warn);
+  } catch (_) {}
+}
+
+function refreshAuthorSuggestions() {
+  const recs = getRecs();
+  const counts = new Map();
+  recs.forEach(r => {
+    const name = (r.author || '').trim();
+    if (name) counts.set(name, (counts.get(name) || 0) + 1);
+  });
+  const sorted = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'))
+    .map(([n]) => n);
+  $('author-list').innerHTML = sorted.map(n => `<option value="${esc(n)}">`).join('');
+}
+
+$('author').addEventListener('blur', () => {
+  const el = $('author');
+  const trimmed = el.value.trim();
+  if (el.value !== trimmed) el.value = trimmed;
+});
+
+function refreshHeaderDate() {
+  $('hdate').textContent = fmtD(new Date());
+}
+refreshHeaderDate();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshHeaderDate();
+});
+
+$$('[data-shift]').forEach(el => on(el, () => selectShift(el.dataset.shift)));
+function selectShift(v) {
+  state.shift = v;
+  $$('[data-shift]').forEach(el => el.classList.toggle('sel', el.dataset.shift === v));
+  showErr('e-shift', false);
+}
+
+$$('[data-staff]').forEach(el => on(el, () => selectStaff(el.dataset.staff)));
+function selectStaff(v) {
+  state.staff = v;
+  $$('[data-staff]').forEach(el => el.classList.toggle('sel', el.dataset.staff === v));
+  showErr('e-nurse', false);
+}
+
+$$('[data-break]').forEach(el => on(el, () => selectBreak(el.dataset.break)));
+function selectBreak(v) {
+  state.breakS = v;
+  $$('[data-break]').forEach(el => el.classList.toggle('sel', el.dataset.break === v));
+  $('br-detail').style.display = v === 'ng' ? 'block' : 'none';
+  showErr('e-break', false);
+
+  if (v === 'ok') {
+    $('br-min').value = '';
+    $('br-staff').value = '';
+    $('sup-reason').value = '';
+    state.support = '';
+    $$('[data-support]').forEach(el => el.classList.remove('sel'));
+    $('sup-reason-wrap').style.display = 'none';
+    showErr('e-br-min', false);
+    showErr('e-support', false);
+  }
+}
+
+$$('[data-support]').forEach(el => on(el, () => selectSupport(el.dataset.support)));
+function selectSupport(v) {
+  state.support = v;
+  $$('[data-support]').forEach(el => el.classList.toggle('sel', el.dataset.support === v));
+  $('sup-reason-wrap').style.display = v === 'no' ? 'block' : 'none';
+  if (v === 'yes') $('sup-reason').value = '';
+  showErr('e-support', false);
+}
+
+$$('[data-comm]').forEach(el => on(el, () => selectComm(el.dataset.comm)));
+function selectComm(v) {
+  state.comm = v;
+  $$('[data-comm]').forEach(el => el.classList.toggle('sel', el.dataset.comm === v));
+  $('comm-positive').style.display = (v === 'good' || v === 'normal') ? 'block' : 'none';
+  $('comm-detail').style.display = v === 'bad' ? 'block' : 'none';
+  showErr('e-comm', false);
+
+  if (v === 'bad') {
+    if (!$('comm-con').children.length) addCommBlock();
+  } else {
+    $('comm-con').innerHTML = '';
+    state.commSeq = 0;
+  }
+}
+
+$$('[data-case]').forEach(el => on(el, () => selectCaseP(el.dataset.case)));
+function selectCaseP(v) {
+  state.caseP = v;
+  $$('[data-case]').forEach(el => el.classList.toggle('sel', el.dataset.case === v));
+  $('cases-wrap').style.display = v === 'yes' ? 'block' : 'none';
+  showErr('e-cp', false);
+
+  if (v === 'yes' && !$$('.case-card').length) addCaseBlock();
+  if (v === 'no') {
+    $('cases-con').innerHTML = '';
+    state.caseSeq = 0;
+  }
+}
+
+$$('#pf-chips .mchip').forEach(el => on(el, () => el.classList.toggle('sel')));
+
+function reindexCommBlocks() {
+  $$('#comm-con .comm-block .clbl').forEach((el, i) => {
+    el.textContent = `対象 ${i + 1}`;
+  });
+}
+
+function addCommBlock(data) {
+  state.commSeq++;
+  const seq = state.commSeq;
+
+  const card = document.createElement('div');
+  card.className = 'card card-wh comm-block';
+  card.dataset.seq = seq;
+
+  card.innerHTML = `
+    <div class="clbl">対象</div>
+    <button class="rm" type="button" aria-label="削除">×</button>
+    <div class="lbl" style="margin-bottom:6px;">対象</div>
+    <div class="chips target-chips" style="margin-bottom:10px;">
+      <div class="mchip" data-target="看護師">看護師</div>
+      <div class="mchip" data-target="医師">医師</div>
+      <div class="mchip" data-target="患者">患者</div>
+      <div class="mchip" data-target="その他">その他</div>
+    </div>
+    <div class="lbl" style="margin-bottom:4px;">コメント<span class="req">*</span></div>
+    <textarea class="comm-note" placeholder="具体的な状況や内容を入力してください" style="min-height:60px;" maxlength="500"></textarea>
+  `;
+
+  $('comm-con').appendChild(card);
+
+  on(card.querySelector('.rm'), () => {
+    card.remove();
+    reindexCommBlocks();
+  });
+
+  $$('.target-chips .mchip', card).forEach(chip => {
+    on(chip, () => chip.classList.toggle('sel'));
+  });
+
+  if (data) {
+    if (data.targets) {
+      const set = new Set(data.targets.split('・'));
+      $$('.target-chips .mchip', card).forEach(chip => {
+        if (set.has(chip.dataset.target)) chip.classList.add('sel');
+      });
+    }
+    card.querySelector('.comm-note').value = data.note || '';
+  }
+
+  reindexCommBlocks();
+  showErr('e-comm-n', false);
+}
+
+function getCommNotes() {
+  const out = [];
+  $$('#comm-con .comm-block').forEach(card => {
+    const targets = Array.from($$('.target-chips .mchip.sel', card)).map(c => c.dataset.target);
+    const note = card.querySelector('.comm-note').value.trim();
+    if (targets.length || note) {
+      out.push({ targets: targets.join('・'), note });
+    }
+  });
+  return out;
+}
+
+on($('btn-add-comm'), () => addCommBlock());
+
+function reindexCaseBlocks() {
+  $$('#cases-con .case-card .clbl').forEach((el, i) => {
+    el.textContent = `症例 ${i + 1}`;
+  });
+}
+
+function addCaseBlock(data) {
+  state.caseSeq++;
+  const card = document.createElement('div');
+  card.className = 'card case-card';
+
+  card.innerHTML = `
+    <div class="clbl">症例</div>
+    <button class="rm" type="button" aria-label="削除">×</button>
+    <div class="lbl" style="margin-bottom:6px;">搬送区分<span class="req">*</span></div>
+    <div class="chips transport-chips" style="margin-bottom:10px;">
+      <div class="chip" data-transport="救急車">🚑 救急車</div>
+      <div class="chip" data-transport="ウォークイン">🚶 ウォークイン</div>
+      <div class="chip" data-transport="その他">その他</div>
+    </div>
+    <div class="lbl" style="margin-bottom:4px;">患者ID</div>
+    <input type="text" class="case-id" placeholder="例：123456" maxlength="20" style="margin-bottom:10px;">
+    <div class="lbl" style="margin-bottom:4px;">気になった内容<span class="req">*</span></div>
+    <textarea class="case-note" placeholder="疾患、対応、気づいたことなど" maxlength="1000"></textarea>
+  `;
+
+  $('cases-con').appendChild(card);
+
+  on(card.querySelector('.rm'), () => {
+    card.remove();
+    reindexCaseBlocks();
+  });
+
+  $$('.transport-chips .chip', card).forEach(chip => {
+    on(chip, () => exclusiveSelect(card, '.transport-chips .chip', chip));
+  });
+
+  if (data) {
+    if (data.transport) {
+      const target = card.querySelector(`.transport-chips [data-transport="${data.transport}"]`);
+      if (target) exclusiveSelect(card, '.transport-chips .chip', target);
+    }
+    card.querySelector('.case-id').value = data.patientId || '';
+    card.querySelector('.case-note').value = data.note || '';
+  }
+
+  reindexCaseBlocks();
+}
+
+function getCases() {
+  const out = [];
+  $$('#cases-con .case-card').forEach(card => {
+    const selChip = card.querySelector('.transport-chips .chip.sel');
+    out.push({
+      transport: selChip ? selChip.dataset.transport : '',
+      patientId: card.querySelector('.case-id').value.trim(),
+      note: card.querySelector('.case-note').value.trim()
+    });
+  });
+  return out;
+}
+
+on($('btn-add-case'), () => addCaseBlock());
+
+function validate() {
+  let ok = true;
+  let firstErrEl = null;
+  const markErr = (id, cond) => {
+    showErr(id, cond);
+    if (cond) {
+      ok = false;
+      if (!firstErrEl) firstErrEl = $(id);
+    }
+  };
+
+  markErr('e-shift', !state.shift);
+
+  const nurseN = parseInt($('nurse-n').value, 10);
+  markErr('e-nurse', !nurseN || nurseN < 1 || !state.staff);
+
+  markErr('e-break', !state.breakS);
+
+  if (state.breakS === 'ng') {
+    const brMin = parseInt($('br-min').value, 10);
+    markErr('e-br-min', !brMin || brMin < 10);
+    markErr('e-support', !state.support);
+  }
+
+  markErr('e-comm', !state.comm);
+
+  if (state.comm === 'bad') {
+    const notes = getCommNotes();
+    const allFilled = notes.length > 0 && notes.every(n => n.note);
+    markErr('e-comm-n', !allFilled);
+  }
+
+  markErr('e-cp', !state.caseP);
+
+  if (state.caseP === 'yes') {
+    const cs = getCases();
+    if (!cs.length || cs.some(c => !c.transport || !c.note)) {
+      showToast('症例の搬送区分と内容を入力してください', true);
+      ok = false;
+    }
+  }
+
+  markErr('e-author', !$('author').value.trim());
+
+  if (!ok && firstErrEl) {
+    firstErrEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  return ok;
+}
+
+on($('btn-save'), () => {
+  if (state.saving) return;
+  if (!validate()) {
+    showToast('未入力の項目があります', true);
+    return;
+  }
+  $('save-confirm-msg').textContent = state.editIdx !== null ? '上書き保存しますか？' : '保存しますか？';
+  $('m-save-confirm').classList.add('open');
+});
+
+on($('btn-save-yes'), () => {
+  if (state.saving) return;
+  $('m-save-confirm').classList.remove('open');
+  doSave();
+});
+
+function doSave() {
+  if (state.saving) return;
+  state.saving = true;
+  const saveBtn = $('btn-save');
+  saveBtn.disabled = true;
+  saveBtn.style.opacity = '0.5';
+
+  try {
+    const now = new Date();
+    const staffLbl = { enough: '十分', normal: '普通', short: '不足' }[state.staff] || '';
+    const pfTags = Array.from($$('#pf-chips .mchip.sel')).map(el => el.dataset.pf);
+
+    const rec = {
+      date: fmtD(now),
+      time: fmtT(now),
+      ts: now.toISOString(),
+      author: $('author').value.trim(),
+      shift: state.shift === 'day' ? '日勤' : '夜勤',
+      nurseN: $('nurse-n').value,
+      staffLbl,
+      breakS: state.breakS === 'ok' ? '確保できた' : 'できなかった',
+      brMin: state.breakS === 'ng' ? $('br-min').value : '',
+      brStaff: state.breakS === 'ng' ? $('br-staff').value : '',
+      supportS: state.breakS === 'ng' ? (state.support === 'yes' ? 'あり' : 'なし') : '',
+      supReason: state.breakS === 'ng' && state.support === 'no' ? $('sup-reason').value.trim() : '',
+      commS: { good: '良好', normal: '普通', bad: '課題あり' }[state.comm] || '',
+      pfTags,
+      pfNote: $('pf-note').value.trim(),
+      commNotes: state.comm === 'bad' ? getCommNotes() : [],
+      caseP: state.caseP,
+      cases: state.caseP === 'yes' ? getCases() : [],
+      free: $('free').value.trim()
+    };
+
+    const recs = getRecs();
+    if (state.editIdx !== null) {
+      recs[state.editIdx] = rec;
+    } else {
+      recs.unshift(rec);
+      if (recs.length > MAX_RECORDS) {
+        showToast(`記録が${MAX_RECORDS}件を超えています。CSVに書き出して古い記録の整理をおすすめします`);
+      }
+    }
+
+    if (!setRecs(recs)) return;
+
+    refreshAuthorSuggestions();
+    state.editIdx = null;
+    $('edit-banner').classList.remove('show');
+    $('m-done').classList.add('open');
+  } finally {
+    state.saving = false;
+    saveBtn.disabled = false;
+    saveBtn.style.opacity = '';
+  }
+}
+
+on($('btn-stay'), () => $('m-done').classList.remove('open'));
+on($('btn-new'), () => {
+  $('m-done').classList.remove('open');
+  resetForm();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+on($('btn-cancel-edit'), () => {
+  $('m-discard').classList.add('open');
+});
+
+on($('btn-discard-yes'), () => {
+  $('m-discard').classList.remove('open');
+  state.editIdx = null;
+  $('edit-banner').classList.remove('show');
+  resetForm();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function resetForm() {
+  Object.assign(state, { shift: '', staff: '', breakS: '', support: '', comm: '', caseP: '' });
+  $$('.sel').forEach(el => el.classList.remove('sel'));
+  $$('.err.show').forEach(el => el.classList.remove('show'));
+  ['nurse-n','br-min','br-staff','sup-reason','pf-note','author','free'].forEach(id => { if ($(id)) $(id).value = ''; });
+  $('br-detail').style.display = 'none';
+  $('sup-reason-wrap').style.display = 'none';
+  $('comm-positive').style.display = 'none';
+  $('comm-detail').style.display = 'none';
+  $('cases-wrap').style.display = 'none';
+  $('comm-con').innerHTML = '';
+  $('cases-con').innerHTML = '';
+  state.commSeq = 0;
+  state.caseSeq = 0;
+  refreshHeaderDate();
+}
+
+on($('btn-exp'), () => {
+  $('pin-input').value = '';
+  $('pin-err').style.display = 'none';
+  $('m-pin').classList.add('open');
+  setTimeout(() => $('pin-input').focus(), 100);
+});
+
+on($('btn-pin-ok'), () => {
+  if ($('pin-input').value === PIN_CODE) {
+    $('m-pin').classList.remove('open');
+    $('pin-input').value = '';
+    doExportCSV();
+  } else {
+    $('pin-err').style.display = 'block';
+  }
+});
+
+$('pin-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('btn-pin-ok').click();
+});
+
+function doExportCSV() {
+  const recs = getRecs();
+  if (!recs.length) {
+    showToast('保存されたデータがありません', true);
+    return;
+  }
+
+  const maxComm = Math.max(0, ...recs.map(r => (r.commNotes || []).length));
+  const maxCase = Math.max(0, ...recs.map(r => (r.cases || []).length));
+
+  const header = ['日付','時刻','入力者','勤務区分','看護師人数','配置状況','休憩確保','休憩不足(分)','かけた人数','病棟・他部署応援','応援なし理由','コミュニケーション評価'];
+  for (let c = 1; c <= maxComm; c++) header.push(`対象${c}`, `コメント${c}`);
+  header.push('よかったこと(タグ)','よかったことコメント','共有コメント','症例有無');
+  for (let k = 1; k <= maxCase; k++) header.push(`症例${k}_搬送区分`, `症例${k}_患者ID`, `症例${k}_内容`);
+
+  const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [header.map(csvCell).join(',')];
+
+  recs.forEach(r => {
+    const row = [
+      r.date, r.time || '', r.author || '', r.shift, r.nurseN, r.staffLbl,
+      r.breakS, r.brMin || '', r.brStaff || '', r.supportS || '', r.supReason || '',
+      r.commS || ''
+    ];
+    for (let ci = 0; ci < maxComm; ci++) {
+      const cn = r.commNotes && r.commNotes[ci];
+      row.push(cn ? cn.targets : '', cn ? cn.note : '');
+    }
+    row.push((r.pfTags || []).join('・'), r.pfNote || '', r.free || '', r.caseP === 'no' ? 'なし' : 'あり');
+    for (let si = 0; si < maxCase; si++) {
+      const cs = r.cases && r.cases[si];
+      row.push(cs ? cs.transport : '', cs ? cs.patientId : '', cs ? cs.note : '');
+    }
+    rows.push(row.map(csvCell).join(','));
+  });
+
+  const csv = '\uFEFF' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `振り返り_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('CSVをダウンロードしました');
+}
+
+on($('btn-hist'), openHist);
+
+function openHist() {
+  buildHistList();
+  $('m-hist').classList.add('open');
+}
+
+$('hist-search').addEventListener('input', () => buildHistList());
+
+$$('.fchip[data-filter]').forEach(chip => {
+  on(chip, () => {
+    const { filter, val } = chip.dataset;
+    const arr = state.filters[filter];
+    const idx = arr.indexOf(val);
+    if (idx >= 0) arr.splice(idx, 1);
+    else arr.push(val);
+    chip.classList.toggle('sel');
+    buildHistList();
+  });
+});
+
+on($('btn-filter-clear'), () => {
+  Object.keys(state.filters).forEach(k => state.filters[k] = []);
+  $$('.fchip[data-filter].sel').forEach(el => el.classList.remove('sel'));
+  $('hist-search').value = '';
+  buildHistList();
+});
+
+function recDate(r) {
+  if (r.ts) {
+    const d = new Date(r.ts);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function calcStats(recs, days) {
+  const now = Date.now();
+  const windowMs = days * 24 * 60 * 60 * 1000;
+  const recent = recs.filter(r => {
+    const d = recDate(r);
+    return d && (now - d.getTime()) <= windowMs;
+  });
+
+  const total = recent.length;
+  if (!total) return { total: 0 };
+
+  const byShift = { day: 0, night: 0 };
+  let breakOk = 0;
+  let commBad = 0;
+  let commGood = 0;
+  let caseYes = 0;
+  let staffShort = 0;
+  let breakShortSum = 0;
+  let breakShortCount = 0;
+
+  recent.forEach(r => {
+    if (r.shift === '日勤') byShift.day++;
+    else if (r.shift === '夜勤') byShift.night++;
+    if (r.breakS === '確保できた') breakOk++;
+    if (r.commS === '課題あり') commBad++;
+    if (r.commS === '良好') commGood++;
+    if (r.caseP === 'yes') caseYes++;
+    if (r.staffLbl === '不足') staffShort++;
+    if (r.brMin) {
+      const m = parseInt(r.brMin, 10);
+      if (!isNaN(m)) { breakShortSum += m; breakShortCount++; }
+    }
+  });
+
+  return {
+    total,
+    byShift,
+    breakRate: Math.round((breakOk / total) * 100),
+    commBadRate: Math.round((commBad / total) * 100),
+    commGoodRate: Math.round((commGood / total) * 100),
+    caseRate: Math.round((caseYes / total) * 100),
+    staffShortRate: Math.round((staffShort / total) * 100),
+    avgBreakShort: breakShortCount ? Math.round(breakShortSum / breakShortCount) : 0,
+    breakShortCount
+  };
+}
+
+function renderStats(recs, isFiltered) {
+  const days = state.statsPeriod;
+  const s = calcStats(recs, days);
+  const periodLabel = `直近${days}日`;
+
+  const tabsHtml = `
+    <div class="stats-tabs">
+      <div class="stats-tab${days === 7 ? ' sel' : ''}" data-period="7">7日</div>
+      <div class="stats-tab${days === 30 ? ' sel' : ''}" data-period="30">30日</div>
+      <div class="stats-tab${days === 90 ? ' sel' : ''}" data-period="90">90日</div>
+    </div>`;
+
+  const filterNote = isFiltered
+    ? `<div class="stats-filter-note">🔍 絞り込み適用中の集計です</div>`
+    : '';
+
+  if (!s.total) {
+    return `<div class="stats">
+      <div class="stats-head">
+        <div class="stats-title">📊 ${periodLabel}の統計</div>
+      </div>
+      ${tabsHtml}
+      <div class="stats-empty">${periodLabel}の記録は${isFiltered ? '該当なし' : 'まだありません'}</div>
+      ${filterNote}
+    </div>`;
+  }
+
+  const barRow = (lbl, pct, val) => `
+    <div class="stats-bar-row">
+      <span class="stats-bar-lbl">${lbl}</span>
+      <span class="stats-bar"><span class="stats-bar-fill" style="width:${pct}%"></span></span>
+      <span class="stats-bar-val">${val}</span>
+    </div>`;
+
+  return `<div class="stats">
+    <div class="stats-head">
+      <div class="stats-title">📊 ${periodLabel}の統計</div>
+      <div class="stats-period">${s.total}件の記録</div>
+    </div>
+    ${tabsHtml}
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">休憩確保率</div>
+        <div class="stat-val">${s.breakRate}<span style="font-size:12px;">%</span></div>
+        ${s.breakShortCount ? `<div class="stat-sub">不足時の平均 ${s.avgBreakShort}分</div>` : ''}
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">人手不足の頻度</div>
+        <div class="stat-val">${s.staffShortRate}<span style="font-size:12px;">%</span></div>
+        <div class="stat-sub">配置「不足」の割合</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">課題ありの割合</div>
+        <div class="stat-val">${s.commBadRate}<span style="font-size:12px;">%</span></div>
+        <div class="stat-sub">良好 ${s.commGoodRate}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">症例記録あり</div>
+        <div class="stat-val">${s.caseRate}<span style="font-size:12px;">%</span></div>
+        <div class="stat-sub">気になった症例の頻度</div>
+      </div>
+    </div>
+    <div class="stats-bar-wrap">
+      ${barRow('日勤', Math.round(s.byShift.day / s.total * 100), s.byShift.day + '件')}
+      ${barRow('夜勤', Math.round(s.byShift.night / s.total * 100), s.byShift.night + '件')}
+    </div>
+    ${filterNote}
+  </div>`;
+}
+
+function applyFilters(recs) {
+  const q = $('hist-search').value.trim().toLowerCase();
+  const f = state.filters;
+
+  return recs.filter(r => {
+    if (f.shift.length && !f.shift.includes(r.shift)) return false;
+    if (f.staff.length && !f.staff.includes(r.staffLbl)) return false;
+    if (f.break.length && !f.break.includes(r.breakS)) return false;
+    if (f.comm.length && !f.comm.includes(r.commS)) return false;
+    if (f.case.length && !f.case.includes(r.caseP)) return false;
+
+    if (q) {
+      const text = [
+        r.author, r.date, r.shift, r.pfNote, r.free,
+        ...(r.commNotes || []).map(n => `${n.targets} ${n.note}`),
+        ...(r.cases || []).map(c => `${c.transport} ${c.patientId} ${c.note}`)
+      ].join(' ').toLowerCase();
+      if (!text.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function buildHistList() {
+  const recs = getRecs();
+  const filtered = applyFilters(recs);
+  const body = $('m-hist-body');
+
+  const f = state.filters;
+  const hasFilter = !!(
+    $('hist-search').value.trim() ||
+    f.shift.length || f.staff.length || f.break.length || f.comm.length || f.case.length
+  );
+
+  const statsHtml = renderStats(filtered, hasFilter);
+
+  $('hist-count').textContent = `(${filtered.length}/${recs.length}件)`;
+
+  if (!recs.length) {
+    body.innerHTML = statsHtml + `<p class="empty-hist">記録がまだありません</p>`;
+    attachStatsTabHandlers();
+    return;
+  }
+
+  if (!filtered.length) {
+    body.innerHTML = statsHtml + `<p class="empty-hist">該当する記録が見つかりません</p>`;
+    attachStatsTabHandlers();
+    return;
+  }
+
+  const listHtml = filtered.map(r => {
+    const idx = recs.indexOf(r);
+    const shiftBadge = r.shift === '日勤' ? 'b-am' : 'b-bl';
+    const commBadge = { '良好': 'b-gn', '普通': 'b-gy', '課題あり': 'b-rd' }[r.commS] || 'b-gy';
+    return `
+      <div class="hi" data-idx="${idx}">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="hi-date">${esc(r.date)} ${esc(r.time || '')} <span class="badge ${shiftBadge}">${esc(r.shift)}</span></div>
+          <span style="font-size:11px;color:#aaa;">詳細 ›</span>
+        </div>
+        <div class="hi-meta">入力者：${esc(r.author || '—')} ／ 看護師 ${esc(r.nurseN)}名（${esc(r.staffLbl)}）</div>
+        <div class="hi-meta">休憩：${esc(r.breakS)}${r.brMin ? `（${esc(r.brMin)}分不足）` : ''} ／ <span class="badge ${commBadge}" style="font-size:10px;padding:1px 6px;">${esc(r.commS)}</span>${r.caseP === 'yes' ? ' <span class="badge b-rd" style="font-size:10px;padding:1px 6px;">症例あり</span>' : ''}</div>
+      </div>`;
+  }).join('');
+
+  body.innerHTML = statsHtml + listHtml;
+
+  attachStatsTabHandlers();
+
+  $$('.hi', body).forEach(el => {
+    on(el, () => openDetail(parseInt(el.dataset.idx, 10)));
+  });
+}
+
+function attachStatsTabHandlers() {
+  $$('.stats-tab').forEach(tab => {
+    on(tab, () => {
+      const p = parseInt(tab.dataset.period, 10);
+      if (p && p !== state.statsPeriod) {
+        state.statsPeriod = p;
+        buildHistList();
+      }
+    });
+  });
+}
+
+function openDetail(idx) {
+  const r = getRecs()[idx];
+  if (!r) return;
+
+  $('m-detail-title').textContent = `${r.date} ${r.time || ''}`;
+  const commBadge = { '良好': 'b-gn', '普通': 'b-gy', '課題あり': 'b-rd' }[r.commS] || 'b-gy';
+
+  let pfHtml = '';
+  if ((r.pfTags && r.pfTags.length) || r.pfNote) {
+    pfHtml = `<div style="background:#f0faf4;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:13px;">
+      <div style="font-size:11px;color:#1e7e34;font-weight:600;margin-bottom:4px;">よかったこと</div>
+      ${(r.pfTags || []).map(t => `<span class="badge b-gn">${esc(t)}</span>`).join('')}
+      ${r.pfNote ? `<div style="margin-top:4px;">${esc(r.pfNote)}</div>` : ''}
+    </div>`;
+  }
+
+  const cnHtml = (r.commS === '課題あり' && r.commNotes && r.commNotes.length)
+    ? r.commNotes.map(n => `
+        <div style="background:#f7f9fc;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:13px;">
+          <span class="badge b-bl">${esc(n.targets || '対象未選択')}</span>
+          ${n.note ? `<div style="margin-top:4px;">${esc(n.note)}</div>` : ''}
+        </div>`).join('')
+    : '';
+
+  const csHtml = r.caseP === 'no'
+    ? '<span style="color:#888;font-size:13px;">なし</span>'
+    : (r.cases || []).map((c, i) => `
+        <div style="background:#f7f9fc;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:13px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+            <span style="font-weight:600;color:#1a5fa8;">症例${i + 1}</span>
+            ${c.transport ? `<span class="badge b-bl">${esc(c.transport)}</span>` : ''}
+            ${c.patientId ? `<span style="color:#888;">ID: ${esc(c.patientId)}</span>` : ''}
+          </div>
+          ${c.note ? `<div>${esc(c.note)}</div>` : ''}
+        </div>`).join('');
+
+  $('m-detail-body').innerHTML = `
+    <div class="ds"><div class="dst">基本情報</div>
+      <div class="dr"><span class="dl">入力者</span><span class="dv">${esc(r.author || '—')}</span></div>
+      <div class="dr"><span class="dl">勤務区分</span><span class="dv">${esc(r.shift)}</span></div>
+      <div class="dr"><span class="dl">看護師人数</span><span class="dv">${esc(r.nurseN)}名（${esc(r.staffLbl)}）</span></div>
+      <div class="dr"><span class="dl">休憩確保</span><span class="dv">${esc(r.breakS)}${r.brMin ? ` (${esc(r.brMin)}分不足${r.brStaff ? ` / ${esc(r.brStaff)}名` : ''})` : ''}</span></div>
+      ${r.supportS ? `<div class="dr"><span class="dl">病棟・他部署応援</span><span class="dv">${esc(r.supportS)}${r.supReason ? ` / ${esc(r.supReason)}` : ''}</span></div>` : ''}
+    </div>
+    <div class="ds"><div class="dst">コミュニケーション・患者対応</div>
+      <div class="dr"><span class="dl">評価</span><span class="dv"><span class="badge ${commBadge}">${esc(r.commS)}</span></span></div>
+      ${pfHtml}${cnHtml}
+    </div>
+    <div class="ds"><div class="dst">気になった症例</div>${csHtml}</div>
+    ${r.free ? `<div class="ds"><div class="dst">共有したいこと</div><div style="font-size:13px;white-space:pre-wrap;">${esc(r.free)}</div></div>` : ''}
+    <div class="btn-row">
+      <button class="b-edit" id="det-edit">✏️ 編集する</button>
+      <button class="b-del" id="det-del">🗑 削除する</button>
+    </div>`;
+
+  on($('det-edit'), () => startEdit(idx));
+  on($('det-del'), () => askDelete(idx));
+
+  $('m-detail').classList.add('open');
+}
+
+function startEdit(idx) {
+  const r = getRecs()[idx];
+  if (!r) return;
+
+  resetForm();
+  state.editIdx = idx;
+
+  selectShift(r.shift === '日勤' ? 'day' : 'night');
+  $('nurse-n').value = r.nurseN || '';
+  const staffMap = { '十分': 'enough', '普通': 'normal', '不足': 'short' };
+  if (staffMap[r.staffLbl]) selectStaff(staffMap[r.staffLbl]);
+
+  selectBreak(r.breakS === '確保できた' ? 'ok' : 'ng');
+  if (r.brMin) $('br-min').value = r.brMin;
+  if (r.brStaff) $('br-staff').value = r.brStaff;
+  if (r.supportS) selectSupport(r.supportS === 'あり' ? 'yes' : 'no');
+  if (r.supReason) $('sup-reason').value = r.supReason;
+
+  const commMap = { '良好': 'good', '普通': 'normal', '課題あり': 'bad' };
+  if (commMap[r.commS]) selectComm(commMap[r.commS]);
+
+  const pfSet = new Set(r.pfTags || []);
+  $$('#pf-chips .mchip').forEach(el => el.classList.toggle('sel', pfSet.has(el.dataset.pf)));
+  if (r.pfNote) $('pf-note').value = r.pfNote;
+
+  if (r.commS === '課題あり' && r.commNotes) {
+    $('comm-con').innerHTML = '';
+    state.commSeq = 0;
+    r.commNotes.forEach(n => addCommBlock(n));
+  }
+
+  selectCaseP(r.caseP || 'no');
+  if (r.caseP === 'yes' && r.cases) {
+    $('cases-con').innerHTML = '';
+    state.caseSeq = 0;
+    r.cases.forEach(c => addCaseBlock(c));
+  }
+
+  $('free').value = r.free || '';
+  $('author').value = r.author || '';
+
+  $('m-detail').classList.remove('open');
+  $('m-hist').classList.remove('open');
+  $('edit-banner').classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function askDelete(idx) {
+  state.delIdx = idx;
+  $('m-cfm').classList.add('open');
+}
+
+on($('btn-cfm-del'), () => {
+  if (state.delIdx === null) return;
+  const delBtn = $('btn-cfm-del');
+  if (delBtn.disabled) return;
+  delBtn.disabled = true;
+  delBtn.style.opacity = '0.5';
+  try {
+    const recs = getRecs();
+    recs.splice(state.delIdx, 1);
+    if (!setRecs(recs)) return;
+    refreshAuthorSuggestions();
+    state.delIdx = null;
+    $('m-cfm').classList.remove('open');
+    $('m-detail').classList.remove('open');
+    showToast('削除しました');
+    buildHistList();
+  } finally {
+    delBtn.disabled = false;
+    delBtn.style.opacity = '';
+  }
+});
+
+$$('[data-close]').forEach(btn => {
+  on(btn, () => $(btn.dataset.close).classList.remove('open'));
+});
+
+$$('.mbg, .cfmbg').forEach(bg => {
+  bg.addEventListener('click', (e) => {
+    if (e.target === bg) bg.classList.remove('open');
+  });
+});
+
+checkStorageUsage();
+refreshAuthorSuggestions();
+
+/* ============================================================
+   PWA: Service Worker 登録
+   ローカル直開き（file://）では動作しないのでスキップ
+   ============================================================ */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then((reg) => {
+        console.log('[PWA] Service Worker registered:', reg.scope);
+      })
+      .catch((err) => {
+        console.warn('[PWA] Service Worker registration failed:', err);
+      });
+  });
+}
+</script>
+</body>
+</html>
